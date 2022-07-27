@@ -71,9 +71,9 @@ public class Menu : MonoBehaviourPunCallbacks
     {
         playerListText.text = "";
 
-        foreach (Player player in PhotonNetwork.PlayerList)
+        foreach (KeyValuePair<int, Player> player in PhotonNetwork.CurrentRoom.Players)
         {
-            playerListText.text += player.NickName + "\n";
+            playerListText.text += player.Value.NickName + "\n";
         }
 
         if (PhotonNetwork.IsMasterClient)

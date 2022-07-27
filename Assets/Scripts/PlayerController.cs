@@ -4,7 +4,7 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 
-public class PlayerController : MonoBehaviourPunCallbacks
+public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 {
     [HideInInspector]
     public int id;
@@ -38,10 +38,25 @@ public class PlayerController : MonoBehaviourPunCallbacks
 
     private void Update()
     {
-        Move();
+        if (PhotonNetwork.IsMasterClient)
+        {
+            if (curHatTime >= GameManager.Instance.timeToWin && !GameManager.Instance.gameEnded)
+            {
+                GameManager.Instance.gameEnded = true;
+                GameManager.Instance.photonView.RPC("WinGame", RpcTarget.All, id);
+            }
+        }
+        
+        if (photonView.IsMine)
+        {
+            Move();
 
-        if (Input.GetKeyDown(KeyCode.Space))
-            TryJump();
+            if (Input.GetKeyDown(KeyCode.Space))
+                TryJump();
+
+            if (hatObject.activeInHierarchy)
+                curHatTime += Time.deltaTime;
+        }
     }
 
     private void Move()
@@ -81,6 +96,18 @@ public class PlayerController : MonoBehaviourPunCallbacks
                     GameManager.Instance.photonView.RPC("GiveHat", RpcTarget.All, id, false);
                 }
             }
+        }
+    }
+
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    {
+        if (stream.IsWriting)
+        {
+            stream.SendNext(curHatTime);
+        }
+        else if (stream.IsReading)
+        {
+            curHatTime = (float)stream.ReceiveNext();
         }
     }
 }

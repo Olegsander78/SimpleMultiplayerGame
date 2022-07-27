@@ -44,7 +44,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     void SpawnPlayer()
     {
-        GameObject playerObj = PhotonNetwork.Instantiate(playerPrefabLocation, spawnPoints[Random.Range(0, spawnPoints.Length)].position, Quaternion.identity);
+        GameObject playerObj = PhotonNetwork.Instantiate(playerPrefabLocation, spawnPoints[Random.Range(0, spawnPoints.Length)].position, Quaternion.identity, 0);
         
         PlayerController playerScript = playerObj.GetComponent<PlayerController>();
 
@@ -63,7 +63,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     }
 
     [PunRPC]
-    public void GiveHat(int playerId, bool initialGive)
+    public void GiveHat(int playerId, bool initialGive = false)
     {
         if (!initialGive)
             GetPlayer(playerWithHat).SetHat(false);
@@ -79,5 +79,20 @@ public class GameManager : MonoBehaviourPunCallbacks
             return true;
         else 
             return false;
+    }
+    [PunRPC]
+    void WinGame(int playerId)
+    {
+        gameEnded = true;
+        PlayerController player = GetPlayer(playerId);
+        GameUI.Instance.SetWinText(player.photonPlayer.NickName);
+        
+        Invoke("GoBackToMenu", 3.0f);
+    }
+
+    void GoBackToMenu()
+    {
+        PhotonNetwork.LeaveRoom();
+        NetworkManager.Instance.ChangeScene("Menu");
     }
 }
