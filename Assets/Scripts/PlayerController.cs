@@ -4,7 +4,7 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviourPunCallbacks
 {
     [HideInInspector]
     public int id;
@@ -20,6 +20,21 @@ public class PlayerController : MonoBehaviour
     [Header("Components")]
     public Rigidbody rig;
     public Player photonPlayer;
+
+    [PunRPC]
+    public void Initialize(Player player)
+    {
+        photonPlayer = player;
+        id = player.ActorNumber;
+
+        GameManager.Instance.players[id - 1] = this;
+
+        if (id == 1)
+            GameManager.Instance.GiveHat(id, true);
+
+        if (!photonView.IsMine)
+            rig.isKinematic = true;
+    }
 
     private void Update()
     {
@@ -44,6 +59,28 @@ public class PlayerController : MonoBehaviour
         if (Physics.Raycast(ray, 0.7f))
         {
             rig.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+    }
+
+    public void SetHat(bool hasHat)
+    {
+        hatObject.SetActive(hasHat);
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (!photonView.IsMine)
+            return;
+
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            if(GameManager.Instance.GetPlayer(collision.gameObject).id == GameManager.Instance.playerWithHat)
+            {
+                if (GameManager.Instance.CanGetHat())
+                {
+                    GameManager.Instance.photonView.RPC("GiveHat", RpcTarget.All, id, false);
+                }
+            }
         }
     }
 }
